@@ -96,7 +96,7 @@ class TestGuiMain(unittest.TestCase):
         mock_logging.config.fileConfig.side_effect = lambda f, disable_existing_loggers: True
         mock_logging.root.manager.loggerDict = ["media_downloader", ""]
 
-        def pre_rum(is_valid_config, is_valid_save_path, event):
+        def pre_run(is_valid_config, is_valid_save_path, event):
             mock_config.reset_mock()
             mock_config.return_value.read.side_effect = lambda f, encoding: is_valid_config
 
@@ -114,7 +114,7 @@ class TestGuiMain(unittest.TestCase):
             mock_subprocess.reset_mock()
             pass
 
-        def post_rum(is_valid_config, is_valid_save_path, event):
+        def post_run(is_valid_config, is_valid_save_path, event):
             if not is_valid_config:
                 self.assertEqual(
                     [
@@ -140,7 +140,8 @@ class TestGuiMain(unittest.TestCase):
 
             actual_layout = mock_window.mock_calls[0][1][1]
             self._check_layout(layout, actual_layout)
-            expect_call_window = [call().read()] * len(event)
+            expect_call_window = [call().focus(), call().focus_element("-WORK_URL-")]
+            expect_call_window.extend([call().read()] * len(event))
             expect_call_window.append(call().close())
             self.assertEqual(expect_call_window, mock_window.mock_calls[1:])
 
@@ -193,7 +194,7 @@ class TestGuiMain(unittest.TestCase):
             Params(False, True, [("-EXIT-", {})], IOError),
         ]
         for params in params_list:
-            pre_rum(*params[:-1])
+            pre_run(*params[:-1])
             expect = params[-1]
             if expect == Result.SUCCESS:
                 actual = gui_main()
@@ -201,7 +202,7 @@ class TestGuiMain(unittest.TestCase):
             else:
                 with self.assertRaises(expect):
                     actual = gui_main()
-            post_rum(*params[:-1])
+            post_run(*params[:-1])
 
 
 if __name__ == "__main__":

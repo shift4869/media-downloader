@@ -73,6 +73,8 @@ def gui_main() -> Result:
     # ウィンドウオブジェクトの作成
     window = sg.Window("MediaDownloader", layout, icon=icon_binary, size=(640, 320), finalize=True)
     # window["-WORK_URL-"].bind("<FocusIn>", "+INPUT FOCUS+")
+    window.focus()
+    window.focus_element("-WORK_URL-")
 
     logging.config.fileConfig("./log/logging.ini", disable_existing_loggers=False)
     for name in logging.root.manager.loggerDict:

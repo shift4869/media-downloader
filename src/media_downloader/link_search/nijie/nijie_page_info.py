@@ -41,7 +41,7 @@ class NijiePageInfo:
         return True
 
     @classmethod
-    def create(cls, soup: BeautifulSoup) -> "NijiePageInfo":
+    def create(cls, soup: BeautifulSoup, author_id: int) -> "NijiePageInfo":
         """nijie作品詳細ページを解析する
 
         画像はaタグから、うごイラはvideoタグから探す
@@ -89,9 +89,10 @@ class NijiePageInfo:
             raise ValueError("NijiePageInfo create error")
 
         # 作者IDを1枚目の直リンクから取得する
-        ps: str = urllib.parse.urlparse(urls[0]).path
-        pt: str = ps.split("/")[-3]
-        author_id = int(pt)
+        # →作者IDが取得できなくなったので引数で受け付ける方針に変更
+        # ps: str = urllib.parse.urlparse(urls[0]).path
+        # pt: str = ps.split("/")[-3]
+        # author_id = int(pt)
 
         # 作品タイトル、作者名はページタイトルから取得する
         title_tag = soup.find("title")
