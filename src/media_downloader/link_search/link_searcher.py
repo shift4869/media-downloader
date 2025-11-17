@@ -53,7 +53,7 @@ class LinkSearcher:
         return False
 
     @classmethod
-    def create(cls, config: configparser.ConfigParser) -> Self:
+    def create(cls, config: dict) -> Self:
         logger.info(MSG.LINKSEARCHER_CREATE_START.value)
         ls = LinkSearcher()
 
@@ -70,8 +70,9 @@ class LinkSearcher:
         # pixiv登録
         try:
             c = config["pixiv"]
-            if c.getboolean("is_pixiv_trace"):
-                fetcher = PixivFetcher(Username(c["username"]), Password(c["password"]), Path(c["save_base_path"]))
+            save_path = Path(config["save_base_path"]) / c["save_dirname"]
+            if c["is_enable"]:
+                fetcher = PixivFetcher(Username(c["username"]), Password(c["password"]), save_path)
                 ls.register(fetcher)
         except Exception:
             notify("pixiv")
@@ -79,10 +80,9 @@ class LinkSearcher:
         # pixivノベル登録
         try:
             c = config["pixiv"]
-            if c.getboolean("is_pixiv_trace"):
-                fetcher = PixivNovelFetcher(
-                    Username(c["username"]), Password(c["password"]), Path(c["save_base_path"])
-                )
+            save_path = Path(config["save_base_path"]) / c["save_dirname"]
+            if c["is_enable"]:
+                fetcher = PixivNovelFetcher(Username(c["username"]), Password(c["password"]), save_path)
                 ls.register(fetcher)
         except Exception:
             notify("pixiv novel")
@@ -90,8 +90,9 @@ class LinkSearcher:
         # nijie登録
         try:
             c = config["nijie"]
-            if c.getboolean("is_nijie_trace"):
-                fetcher = NijieFetcher(Username(c["email"]), Password(c["password"]), Path(c["save_base_path"]))
+            save_path = Path(config["save_base_path"]) / c["save_dirname"]
+            if c["is_enable"]:
+                fetcher = NijieFetcher(Username(c["username"]), Password(c["password"]), save_path)
                 ls.register(fetcher)
         except Exception:
             notify("nijie")
@@ -99,8 +100,9 @@ class LinkSearcher:
         # ニコニコ静画登録
         try:
             c = config["nico_seiga"]
-            if c.getboolean("is_seiga_trace"):
-                fetcher = NicoSeigaFetcher(Username(c["email"]), Password(c["password"]), Path(c["save_base_path"]))
+            save_path = Path(config["save_base_path"]) / c["save_dirname"]
+            if c["is_enable"]:
+                fetcher = NicoSeigaFetcher(Username(c["username"]), Password(c["password"]), save_path)
                 ls.register(fetcher)
         except Exception:
             notify("niconico seiga")

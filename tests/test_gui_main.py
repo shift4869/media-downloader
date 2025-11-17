@@ -186,17 +186,17 @@ class TestGuiMain(unittest.TestCase):
         }
         Params = namedtuple("Params", ["is_valid_config", "is_valid_save_path", "event", "result"])
         params_list = [
-            Params(True, True, [("-EXIT-", {})], Result.SUCCESS),
-            Params(True, True, [("-RUN-", run_values), ("-EXIT-", {})], Result.SUCCESS),
-            Params(True, True, [("-FOLDER_OPEN-", folder_values), ("-EXIT-", {})], Result.SUCCESS),
-            Params(True, True, [("-RUN-", error_run_values), ("-EXIT-", {})], Result.SUCCESS),
-            Params(True, False, [("-EXIT-", {})], Result.SUCCESS),
+            Params(True, True, [("-EXIT-", {})], Result.success),
+            Params(True, True, [("-RUN-", run_values), ("-EXIT-", {})], Result.success),
+            Params(True, True, [("-FOLDER_OPEN-", folder_values), ("-EXIT-", {})], Result.success),
+            Params(True, True, [("-RUN-", error_run_values), ("-EXIT-", {})], Result.success),
+            Params(True, False, [("-EXIT-", {})], Result.success),
             Params(False, True, [("-EXIT-", {})], IOError),
         ]
         for params in params_list:
             pre_run(*params[:-1])
             expect = params[-1]
-            if expect == Result.SUCCESS:
+            if expect == Result.success:
                 actual = gui_main()
                 self.assertEqual(expect, actual)
             else:

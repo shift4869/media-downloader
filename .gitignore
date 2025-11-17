@@ -124,3 +124,4 @@ log*.txt*
 *.bat
 *PySimpleGUI*
 /user
+*widgetsgallery*

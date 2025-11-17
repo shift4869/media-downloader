@@ -2,13 +2,20 @@ from enum import Enum, auto
 from logging import Logger
 from typing import Any
 
-from TkEasyGUI import Multiline, Window
+from PySide6.QtCore import QDateTime, QDir, QLibraryInfo, QSysInfo, Qt, QTimer, Slot, qVersion
+from PySide6.QtGui import QCursor, QDesktopServices, QGuiApplication, QIcon, QKeySequence, QShortcut, QStandardItem
+from PySide6.QtGui import QStandardItemModel, QTextCursor
+from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QCommandLinkButton, QDateTimeEdit, QDial, QDialog
+from PySide6.QtWidgets import QDialogButtonBox, QFileSystemModel, QGridLayout, QGroupBox, QHBoxLayout, QLabel
+from PySide6.QtWidgets import QLineEdit, QListView, QMenu, QPlainTextEdit, QProgressBar, QPushButton, QRadioButton
+from PySide6.QtWidgets import QScrollBar, QSizePolicy, QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget
+from PySide6.QtWidgets import QTextBrowser, QTextEdit, QToolBox, QToolButton, QTreeView, QVBoxLayout, QWidget
 
-window_cache: Window = None
+window_cache: QDialog = None
 
 
 class CustomLogger(Logger):
-    def info(self, msg: str, window: Window = None, *args, **kwargs):
+    def info(self, msg: str, window: QDialog = None, *args, **kwargs):
         # コンソールとファイル出力
         if "stacklevel" not in kwargs:
             # 呼び出し元の行番号を採用するためにstacklevelを設定
@@ -29,16 +36,17 @@ class CustomLogger(Logger):
             else:
                 # そうでない場合、画面更新は何もせず終了
                 return
-        multiline: Multiline = window["-OUTPUT-"]
-        old_text = multiline.get_text()
-        multiline.set_text(old_text + msg + "\n")
-        multiline.update()
-        window.refresh()
+        textarea: QTextEdit = window.textarea
+        # old_text = textarea.document().toPlainText()
+        textarea.append(msg)
+        textarea.moveCursor(QTextCursor.MoveOperation.End)
+        textarea.repaint()
+        window.repaint()
 
 
 class Result(Enum):
-    SUCCESS = auto()
-    FAILED = auto()
+    success = auto()
+    failed = auto()
 
 
 def find_values(

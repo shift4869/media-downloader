@@ -18,8 +18,8 @@ dependencies = [
     "pixivpy3>=3.7.5",
     "plyer>=2.1.0",
     "pycodestyle>=2.12.1",
+    "pyside6>=6.10.0",
     "ruff>=0.8.0",
-    "tkeasygui>=1.0.10",
     "xmltodict>=0.14.2",
 ]
 readme = "README.md"
