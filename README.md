@@ -37,7 +37,7 @@ PySimpleGUIを使用してGUIでの操作を前提とする。
 
 
 ## License/Author
-GNU Lesser General Public License v3.0（PySimpleGUIを使っている）  
-Copyright (c) 2021 - 2024 [shift](https://twitter.com/_shift4869)  
+GNU Lesser General Public License v3.0（PySide6を使用している）  
+Copyright (c) 2021 ~ [shift](https://x.com/_shift4869)  
 
 
