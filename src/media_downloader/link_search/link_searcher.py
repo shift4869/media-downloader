@@ -102,7 +102,7 @@ class LinkSearcher:
             c = config["nico_seiga"]
             save_path = Path(config["save_base_path"]) / c["save_dirname"]
             if c["is_enable"]:
-                fetcher = NicoSeigaFetcher(Username(c["username"]), Password(c["password"]), save_path)
+                fetcher = NicoSeigaFetcher(config, save_path)
                 ls.register(fetcher)
         except Exception:
             notify("niconico seiga")
