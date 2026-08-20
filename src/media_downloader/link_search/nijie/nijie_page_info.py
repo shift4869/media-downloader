@@ -66,7 +66,7 @@ class NijiePageInfo:
             video_url = ""
             for video in video_s:
                 if video.get("src") is not None:
-                    video_url = "http:" + video["src"]
+                    video_url = "https:" + video["src"]
                     break
             if video_url != "":
                 # videoタグがあった場合はaタグは探さない
