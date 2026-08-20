@@ -1,4 +1,3 @@
-import urllib.parse
 from dataclasses import dataclass
 
 from bs4 import BeautifulSoup, Tag
@@ -80,7 +79,7 @@ class NijiePageInfo:
             img_url = ""
             for a in a_s:
                 if a.get("href") is not None:
-                    img_url = "http:" + a.img["src"]
+                    img_url = "https:" + a.img["src"]
                     break
             if img_url != "":
                 urls.append(img_url)
