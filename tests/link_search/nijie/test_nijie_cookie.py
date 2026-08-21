@@ -18,7 +18,7 @@ class TestNijieCookie(unittest.TestCase):
             )
             nijie_cookie = NijieCookie(httpx.Cookies(), {"headers": "dummy_headers"})
 
-            NIJIE_TOP_URL = "http://nijie.info/index.php"
+            NIJIE_TOP_URL = "https://nijie.info/index.php"
             self.assertEqual(NIJIE_TOP_URL, nijie_cookie.NIJIE_TOP_URL)
             self.assertTrue(isinstance(nijie_cookie._cookies, httpx.Cookies))
             self.assertEqual({"headers": "dummy_headers"}, nijie_cookie._headers)
@@ -27,7 +27,7 @@ class TestNijieCookie(unittest.TestCase):
     def test_is_valid(self):
         with ExitStack() as stack:
             mock_get = stack.enter_context(patch("media_downloader.link_search.nijie.nijie_cookie.httpx.get"))
-            NIJIE_TOP_URL = "http://nijie.info/index.php"
+            NIJIE_TOP_URL = "https://nijie.info/index.php"
             mock_res = MagicMock()
             mock_res.status_code = 200
             mock_res.url = NIJIE_TOP_URL

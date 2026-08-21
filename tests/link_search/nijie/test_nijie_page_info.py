@@ -65,7 +65,7 @@ class TestNijiePageInfo(unittest.TestCase):
         soup = BeautifulSoup(html_img, "html.parser")
         actual = NijiePageInfo.create(soup, int(author_id.id))
 
-        urls = ["http://pic.nijie.net/04/nijie/23m02/24/11111111/illust/sample_01.jpg"]
+        urls = ["https://pic.nijie.net/04/nijie/23m02/24/11111111/illust/sample_01.jpg"]
         source_list = NijieSourceList.create(urls)
         author_name = Authorname("作者名1")
         illust_name = Worktitle("作品名1")
@@ -86,7 +86,7 @@ class TestNijiePageInfo(unittest.TestCase):
         soup = BeautifulSoup(html_video, "html.parser")
         actual = NijiePageInfo.create(soup, int(author_id.id))
 
-        urls = ["http://pic.nijie.net/02/nijie/23m02/12/11111111/illust/sample_01.mp4"]
+        urls = ["https://pic.nijie.net/02/nijie/23m02/12/11111111/illust/sample_01.mp4"]
         source_list = NijieSourceList.create(urls)
         author_name = Authorname("作者名1")
         illust_name = Worktitle("作品名1")

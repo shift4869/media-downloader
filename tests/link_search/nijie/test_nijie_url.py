@@ -28,7 +28,7 @@ class TestNijieURL(unittest.TestCase):
         self.assertEqual(expect, url.work_id)
 
         # 詳細ページ
-        url_str = "http://nijie.info/view_popup.php?id=12345678"
+        url_str = "https://nijie.info/view_popup.php?id=12345678"
         url = NijieURL.create(url_str)
         self.assertEqual(url_str, url.original_url)
 
@@ -42,7 +42,7 @@ class TestNijieURL(unittest.TestCase):
         url_str = "https://nijie.info/view.php?id=12345678"
         self.assertEqual(True, NijieURL.is_valid(url_str))
 
-        url_str = "http://nijie.info/view_popup.php?id=12345678"
+        url_str = "https://nijie.info/view_popup.php?id=12345678"
         self.assertEqual(True, NijieURL.is_valid(url_str))
 
         url_str = "https://www.google.co.jp/"

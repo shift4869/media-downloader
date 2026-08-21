@@ -28,7 +28,7 @@ class TestNijieDownloader(unittest.TestCase):
         self.assertEqual(expect, actual)
 
     def test_NijieDownloader(self):
-        nijie_url = NijieURL.create("http://nijie.info/view_popup.php?id=12345678")
+        nijie_url = NijieURL.create("https://nijie.info/view_popup.php?id=12345678")
         base_path = Path(self.TBP)
         cookies = MagicMock(spec=NijieCookie)
 
@@ -39,7 +39,7 @@ class TestNijieDownloader(unittest.TestCase):
         self.assertEqual(cookies, actual.cookies)
 
     def test_is_valid(self):
-        nijie_url = NijieURL.create("http://nijie.info/view_popup.php?id=12345678")
+        nijie_url = NijieURL.create("https://nijie.info/view_popup.php?id=12345678")
         base_path = Path(self.TBP)
         cookies = MagicMock(spec=NijieCookie)
 
@@ -80,7 +80,7 @@ class TestNijieDownloader(unittest.TestCase):
             mock_get.get.side_effect = lambda url, headers, cookies: mock_res
             mock_session.side_effect = lambda follow_redirects, timeout, transport: mock_get
 
-            nijie_url = NijieURL.create(f"http://nijie.info/view_popup.php?id={work_id}")
+            nijie_url = NijieURL.create(f"https://nijie.info/view_popup.php?id={work_id}")
             base_path = Path(self.TBP)
             cookies = MagicMock(spec=NijieCookie)
             cookies._headers = {"dummy_headers": "dummy_headers"}
@@ -98,7 +98,7 @@ class TestNijieDownloader(unittest.TestCase):
 
             # 漫画形式初回DL想定
             work_id = 20000000
-            nijie_url = NijieURL.create(f"http://nijie.info/view_popup.php?id={work_id}")
+            nijie_url = NijieURL.create(f"https://nijie.info/view_popup.php?id={work_id}")
             mock_res.text = """
                 <title>作品名2 | 作者名2 | ニジエ</title>
                 <div id="img_filter" data-index='0'>
