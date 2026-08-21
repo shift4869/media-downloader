@@ -100,6 +100,7 @@ class GuiMain(QDialog):
         # 初期化をスキップする
         need_init = True
         if hasattr(self, "link_searcher"):
+            # チェックボックスが変更されているか
             checkbox_match = [
                 self.config["pixiv"]["is_enable"] == self.checkbox_list[0].isChecked(),
                 self.config["nijie"]["is_enable"] == self.checkbox_list[1].isChecked(),
@@ -108,10 +109,30 @@ class GuiMain(QDialog):
             if all(checkbox_match):
                 need_init = False
 
+            # 保存先パスが変更されているか
+            tp = Path(self.textbox3.text())
+            if any([
+                self.save_base_path != tp,
+                self.config["save_base_path"] != self.save_base_path,
+                tp != self.config["save_base_path"],
+            ]):
+                need_init = True
+
         # 初期化が必要な場合初期化する
         if need_init:
             logger.info("LinkSearcher init -> start")
-            self.config["save_base_path"] = self.save_base_path
+            # 保存先パス設定
+            tp = Path(self.textbox3.text())
+            if any([
+                self.save_base_path != tp,
+                self.config["save_base_path"] != self.save_base_path,
+                tp != self.config["save_base_path"],
+            ]):
+                # 変更があった場合、テキストボックスに入力されているパスを優先とする
+                self.save_base_path = Path(tp)
+                self.save_base_path.mkdir(parents=True, exist_ok=True)
+                self.config["save_base_path"] = self.save_base_path
+
             self.config["pixiv"]["is_enable"] = self.checkbox_list[0].isChecked()
             self.config["nijie"]["is_enable"] = self.checkbox_list[1].isChecked()
             self.config["nico_seiga"]["is_enable"] = self.checkbox_list[2].isChecked()

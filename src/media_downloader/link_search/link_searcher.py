@@ -1,4 +1,3 @@
-import configparser
 import logging
 from logging import INFO, getLogger
 from pathlib import Path
@@ -32,14 +31,14 @@ class LinkSearcher:
             raise TypeError("Invalid fetcher.")
         self.fetcher_list.append(fetcher)
         fetcher_class = fetcher.__class__.__name__
-        logger.info(MSG.LINKSEARCHER_REGISTERED.value.format(fetcher_class))
+        logger.info(str(MSG.LINKSEARCHER_REGISTERED.value).format(fetcher_class))
 
     def fetch(self, url: str) -> None:
         # CoR
         for p in self.fetcher_list:
             if p.is_target_url(URL(url)):
                 fetcher_class = p.__class__.__name__
-                logger.info(MSG.LINKSEARCHER_FETCHER_FOUND.value.format(url, fetcher_class))
+                logger.info(str(MSG.LINKSEARCHER_FETCHER_FOUND.value).format(url, fetcher_class))
                 p.fetch(url)
                 break
         else:
