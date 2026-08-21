@@ -96,7 +96,7 @@ class PixivNovelDownloader:
             f"text_length:{work.text_length}\n"
         )
         soup = BeautifulSoup(work.caption, "html.parser")
-        caption = f"[caption]\n" f"{soup.prettify()}\n"
+        caption = f"[caption]\n{soup.prettify()}\n"
 
         # ノベルテキストの全文を保存する
         # 改ページは"[newpage]"の内部タグで表現される
@@ -111,21 +111,22 @@ class PixivNovelDownloader:
 
 
 if __name__ == "__main__":
-    import configparser
     import logging.config
     from pathlib import Path
+
+    import orjson
 
     from media_downloader.link_search.password import Password
     from media_downloader.link_search.pixiv_novel.pixiv_novel_fetcher import PixivNovelFetcher
     from media_downloader.link_search.username import Username
 
     logging.config.fileConfig("./log/logging.ini", disable_existing_loggers=False)
-    CONFIG_FILE_NAME = "./config/config.ini"
-    config = configparser.ConfigParser()
-    config.read(CONFIG_FILE_NAME, encoding="utf8")
+
+    CONFIG_FILE_NAME = "./config/config.json"
+    config = orjson.loads(Path(CONFIG_FILE_NAME).read_bytes())
 
     base_path = Path("./MediaDownloader/LinkSearch/")
-    if config["pixiv"].getboolean("is_pixiv_trace"):
+    if config["pixiv"]["is_enable"]:
         fetcher = PixivNovelFetcher(
             Username(config["pixiv"]["username"]), Password(config["pixiv"]["password"]), base_path
         )

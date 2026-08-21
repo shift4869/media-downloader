@@ -3,12 +3,13 @@
 外部リンク探索クラスをテストする
 """
 
-import configparser
 import sys
 import unittest
 from contextlib import ExitStack
 from logging import WARNING, getLogger
+from pathlib import Path
 
+import orjson
 from mock import MagicMock, patch
 
 from media_downloader.link_search.link_searcher import LinkSearcher
@@ -100,10 +101,8 @@ class TestLinkSearcher(unittest.TestCase):
             # mock_skeb_fetcher = stack.enter_context(patch("media_downloader.link_search.link_searcher.SkebFetcher"))
 
             # 正常系
-            CONFIG_FILE_NAME = "./config/config.ini"
-            config = configparser.ConfigParser()
-            if not config.read(CONFIG_FILE_NAME, encoding="utf8"):
-                raise IOError
+            CONFIG_FILE_NAME = "./config/config.json"
+            config = orjson.loads(Path(CONFIG_FILE_NAME).read_bytes())
 
             lsc = LinkSearcher.create(config)
 

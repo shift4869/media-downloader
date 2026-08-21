@@ -110,7 +110,7 @@ class PixivWorkDownloader:
 
 
 if __name__ == "__main__":
-    import configparser
+    import orjson
     import logging.config
 
     from media_downloader.link_search.password import Password
@@ -118,12 +118,12 @@ if __name__ == "__main__":
     from media_downloader.link_search.username import Username
 
     logging.config.fileConfig("./log/logging.ini", disable_existing_loggers=False)
-    CONFIG_FILE_NAME = "./config/config.ini"
-    config = configparser.ConfigParser()
-    config.read(CONFIG_FILE_NAME, encoding="utf8")
+
+    CONFIG_FILE_NAME = "./config/config.json"
+    config = orjson.loads(Path(CONFIG_FILE_NAME).read_bytes())
 
     base_path = Path("./MediaDownloader/LinkSearch/")
-    if config["pixiv"].getboolean("is_pixiv_trace"):
+    if config["pixiv"]["is_enable"]:
         fetcher = PixivFetcher(Username(config["pixiv"]["username"]), Password(config["pixiv"]["password"]), base_path)
         # 一枚絵（単一）
         # work_url = "https://www.pixiv.net/artworks/98804653"

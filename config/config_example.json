@@ -1,0 +1,20 @@
+{
+    "save_base_path": "C:/media-downloader/",
+    "pixiv": {
+        "is_enable": true,
+        "username": "username",
+        "password": "password",
+        "save_dirname": "MD_Pixiv"
+    },
+    "nijie": {
+        "is_enable": true,
+        "username": "user@example.com",
+        "password": "password",
+        "save_dirname": "MD_Nijie"
+    },
+    "nico_seiga": {
+        "is_enable": true,
+        "user_session": "user_session",
+        "save_dirname": "MD_Seiga"
+    }
+}

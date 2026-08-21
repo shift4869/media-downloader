@@ -109,20 +109,23 @@ class NijiePageInfo:
 
 
 if __name__ == "__main__":
-    import configparser
+    import logging.config
     from pathlib import Path
+
+    import orjson
 
     from media_downloader.link_search.nijie.nijie_fetcher import NijieFetcher
     from media_downloader.link_search.password import Password
     from media_downloader.link_search.username import Username
 
-    CONFIG_FILE_NAME = "./config/config.ini"
-    config = configparser.ConfigParser()
-    config.read(CONFIG_FILE_NAME, encoding="utf8")
+    logging.config.fileConfig("./log/logging.ini", disable_existing_loggers=False)
+
+    CONFIG_FILE_NAME = "./config/config.json"
+    config = orjson.loads(Path(CONFIG_FILE_NAME).read_bytes())
 
     base_path = Path("./media_downloader/link_search/")
-    if config["nijie"].getboolean("is_nijie_trace"):
-        fetcher = NijieFetcher(Username(config["nijie"]["email"]), Password(config["nijie"]["password"]), base_path)
+    if config["nijie"]["is_enable"]:
+        fetcher = NijieFetcher(Username(config["nijie"]["username"]), Password(config["nijie"]["password"]), base_path)
 
         illust_id = 251267  # 一枚絵
         # illust_id = 251197  # 漫画
@@ -130,4 +133,4 @@ if __name__ == "__main__":
         # illust_id = 409587  # うごイラ複数
 
         illust_url = f"https://nijie.info/view_popup.php?id={illust_id}"
-        fetcher.fetch(illust_url)
+        print(fetcher.cookies)

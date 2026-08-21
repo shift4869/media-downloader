@@ -122,20 +122,21 @@ class PixivUgoiraDownloader:
 
 
 if __name__ == "__main__":
-    import configparser
     import logging.config
+
+    import orjson
 
     from media_downloader.link_search.password import Password
     from media_downloader.link_search.pixiv.pixiv_fetcher import PixivFetcher
     from media_downloader.link_search.username import Username
 
     logging.config.fileConfig("./log/logging.ini", disable_existing_loggers=False)
-    CONFIG_FILE_NAME = "./config/config.ini"
-    config = configparser.ConfigParser()
-    config.read(CONFIG_FILE_NAME, encoding="utf8")
+
+    CONFIG_FILE_NAME = "./config/config.json"
+    config = orjson.loads(Path(CONFIG_FILE_NAME).read_bytes())
 
     base_path = Path("./MediaDownloader/LinkSearch/")
-    if config["pixiv"].getboolean("is_pixiv_trace"):
+    if config["pixiv"]["is_enable"]:
         pa_cont = PixivFetcher(Username(config["pixiv"]["username"]), Password(config["pixiv"]["password"]), base_path)
         work_url = "https://www.pixiv.net/artworks/86704541"
         pa_cont.fetch(work_url)

@@ -151,6 +151,12 @@ class GuiMain(QDialog):
         dialog = QFileDialog()
         dirname = dialog.getExistingDirectory(dir=str(now_input_path))
 
+        # 問い合わせ結果が空文字なら失敗
+        if not dirname:
+            logger.info("Directory selection was cancelled.")
+            logger.info("GuiMain directory_browse -> abort")
+            return Result.failed
+
         # 問い合わせ結果を確認
         try:
             dirname_path = Path(dirname)

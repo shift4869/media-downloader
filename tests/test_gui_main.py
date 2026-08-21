@@ -1,211 +1,456 @@
-import configparser
+import logging
 import sys
 import unittest
-from collections import namedtuple
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-import TkEasyGUI as sg
-from mock import call, patch
+import orjson
+from PySide6.QtWidgets import QApplication, QCheckBox, QLineEdit, QPushButton, QTextEdit
 
-from media_downloader.gui_main import gui_main
+from media_downloader.gui_main import GuiMain
 from media_downloader.util import Result
+
+CONFIG_FILE_NAME = "./config/config.json"
 
 
 class TestGuiMain(unittest.TestCase):
-    def _check_layout(self, e, a):
-        """sgオブジェクトは別IDで生成されるため、各要素を比較する"""
-        # typeチェック
-        self.assertEqual(type(e), type(a))
-        # リストならば再起
-        if isinstance(e, list) and isinstance(a, list):
-            self.assertEqual(len(e), len(a))
-            for e1, a1 in zip(e, a):
-                self._check_layout(e1, a1)
-        else:
-            # 要素チェック
-            match e, a:
-                case (sg.Text(), sg.Text()):
-                    self.assertEqual(e.get(), a.get())
-                case (sg.InputText(), sg.InputText()):
-                    self.assertEqual(e.key, a.key)
-                case (sg.Button(), sg.Button()):
-                    self.assertEqual(e.get(), a.get())
-                    self.assertEqual(e.key, a.key)
-                case (sg.Checkbox(), sg.Checkbox()):
-                    self.assertEqual(e.key, a.key)
-                case (sg.FolderBrowse(), sg.FolderBrowse()):
-                    pass
-                case (sg.Multiline(), sg.Multiline()):
-                    self.assertEqual(e.get(), a.get())
-                    self.assertEqual(e.key, a.key)
-                case _:
-                    raise ValueError(e, a)
+    @classmethod
+    def setUpClass(cls):
+        """Qt アプリケーションを一度だけ生成する"""
+        cls.app = QApplication.instance()
+        if cls.app is None:
+            cls.app = QApplication([])
 
-    def _make_layout(self, config: configparser.ConfigParser, save_base_path: Path) -> list[list]:
-        layout = [
-            [sg.Text("MediaDownloader")],
-            [
-                sg.Text("作品ページURL", size=(18, 1)),
-                sg.InputText(key="-WORK_URL-", default_text="", size=(61, 1)),
-                sg.Button("実行", key="-RUN-"),
-            ],
-            [
-                sg.Text("チェック対象", size=(18, 1)),
-                sg.Checkbox("pixiv", default=config["pixiv"].getboolean("is_pixiv_trace"), key="-CB_pixiv-"),
-                sg.Checkbox("nijie", default=config["nijie"].getboolean("is_nijie_trace"), key="-CB_nijie-"),
-                sg.Checkbox(
-                    "nico_seiga", default=config["nico_seiga"].getboolean("is_seiga_trace"), key="-CB_nico_seiga-"
-                ),
-            ],
-            [
-                sg.Text("保存先パス", size=(18, 1)),
-                sg.InputText(key="-SAVE_PATH-", default_text=save_base_path, size=(61, 1)),
-                sg.FolderBrowse("参照", initial_folder=save_base_path),
-                sg.Button("開く", key="-FOLDER_OPEN-", pad=((7, 2), (0, 0))),
-            ],
-            [sg.Text("", size=(70, 2))],
-            [
-                sg.Multiline(
-                    key="-OUTPUT-",
-                    size=(100, 10),
-                    readonly=True,
-                    autoscroll=True,
-                )
-            ],
+        # テスト中の GUI ログを抑制する
+        cls.logger = logging.getLogger("media_downloader.gui_main")
+        cls.original_log_level = cls.logger.level
+        cls.logger.setLevel(logging.WARNING)
+
+    @classmethod
+    def tearDownClass(cls):
+        """ログレベルを元に戻す"""
+        cls.logger.setLevel(cls.original_log_level)
+
+    def setUp(self):
+        """テスト用設定を読み込む"""
+        self.config = orjson.loads(Path(CONFIG_FILE_NAME).read_bytes())
+
+    def _create_window(self):
+        """テスト用 GuiMain を生成する"""
+        return GuiMain()
+
+    def test_init(self):
+        """GuiMain 初期化の正常系・異常系を確認する"""
+
+        # 正常系
+        window = self._create_window()
+
+        self.assertIsNotNone(window)
+        self.assertIsInstance(window.config, dict)
+
+        self.assertIn("pixiv", window.config)
+        self.assertIn("nijie", window.config)
+        self.assertIn("nico_seiga", window.config)
+        self.assertIn("save_base_path", window.config)
+
+        self.assertIsInstance(window.save_base_path, Path)
+
+        self.assertTrue(hasattr(window, "textbox1"))
+        self.assertTrue(hasattr(window, "textbox3"))
+        self.assertTrue(hasattr(window, "checkbox_list"))
+        self.assertTrue(hasattr(window, "textarea"))
+
+        expected = Path(self.config["save_base_path"])
+        self.assertEqual(expected, window.save_base_path)
+        self.assertEqual(expected, window.config["save_base_path"])
+
+        # 異常系: 設定ファイルが存在しない
+        mock_exists = self.enterContext(
+            patch(
+                "media_downloader.gui_main.Path.exists",
+                return_value=False,
+            )
+        )
+
+        with self.assertRaises(IOError):
+            GuiMain()
+
+        mock_exists.assert_called_once()
+
+        # 異常系: 設定ファイルが空
+        mock_exists.return_value = True
+
+        mock_loads = self.enterContext(
+            patch(
+                "media_downloader.gui_main.orjson.loads",
+                return_value={},
+            )
+        )
+
+        with self.assertRaises(IOError):
+            GuiMain()
+
+        mock_loads.assert_called_once()
+
+        # 異常系: save_base_path が不正
+        invalid_config = self.config.copy()
+        invalid_config["save_base_path"] = None
+
+        mock_loads.reset_mock()
+        mock_loads.return_value = invalid_config
+
+        window = GuiMain()
+
+        expected = Path(
+            __import__(
+                "media_downloader.gui_main",
+                fromlist=["__file__"],
+            ).__file__
+        ).parent
+
+        self.assertEqual(expected, window.save_base_path)
+        self.assertEqual(expected, window.config["save_base_path"])
+
+    def test_link_search(self):
+        """link_search の正常系・異常系を確認する"""
+
+        mock_create = self.enterContext(patch("media_downloader.gui_main.LinkSearcher.create"))
+
+        # 異常系: レイアウト未初期化
+        window = GuiMain.__new__(GuiMain)
+
+        actual = window.link_search()
+
+        self.assertEqual(Result.failed, actual)
+        mock_create.assert_not_called()
+
+        # 異常系: URL が空
+        window = self._create_window()
+        window.textbox1.setText("")
+
+        mock_create.reset_mock()
+        mock_create.side_effect = None
+        mock_create.return_value = MagicMock()
+
+        actual = window.link_search()
+
+        self.assertEqual(Result.failed, actual)
+        mock_create.assert_not_called()
+
+        # 正常系: fetch 成功
+        window = self._create_window()
+        work_url = "https://www.pixiv.net/artworks/86704541"
+        window.textbox1.setText(work_url)
+
+        mock_create.reset_mock()
+        mock_create.side_effect = None
+
+        mock_link_searcher = MagicMock()
+        mock_create.return_value = mock_link_searcher
+
+        actual = window.link_search()
+
+        self.assertEqual(Result.success, actual)
+        mock_create.assert_called_once_with(window.config)
+        mock_link_searcher.fetch.assert_called_once_with(work_url)
+        self.assertTrue(hasattr(window, "link_searcher"))
+
+        # 異常系: fetch で例外が発生しても success
+        window = self._create_window()
+        window.textbox1.setText(work_url)
+
+        mock_create.reset_mock()
+        mock_create.side_effect = None
+
+        mock_link_searcher = MagicMock()
+        mock_link_searcher.fetch.side_effect = ValueError("invalid URL")
+        mock_create.return_value = mock_link_searcher
+
+        actual = window.link_search()
+
+        self.assertEqual(Result.success, actual)
+        mock_create.assert_called_once_with(window.config)
+        mock_link_searcher.fetch.assert_called_once_with(work_url)
+
+        # 正常系: チェック状態が変わらない場合は再利用
+        window = self._create_window()
+        window.textbox1.setText(work_url)
+
+        mock_create.reset_mock()
+        mock_create.side_effect = None
+
+        mock_link_searcher = MagicMock()
+        mock_create.return_value = mock_link_searcher
+
+        actual = window.link_search()
+        self.assertEqual(Result.success, actual)
+
+        actual = window.link_search()
+        self.assertEqual(Result.success, actual)
+
+        self.assertEqual(1, mock_create.call_count)
+        self.assertEqual(2, mock_link_searcher.fetch.call_count)
+
+        # 正常系: pixiv のチェック状態が変化した場合は再生成
+        window = self._create_window()
+        window.textbox1.setText(work_url)
+
+        mock_create.reset_mock()
+        mock_create.side_effect = None
+
+        mock_link_searcher1 = MagicMock()
+        mock_link_searcher2 = MagicMock()
+
+        mock_create.side_effect = [
+            mock_link_searcher1,
+            mock_link_searcher2,
         ]
-        return layout
 
-    def test_gui_main(self):
-        CONFIG_FILE_NAME = "./config/config.ini"
-        config = configparser.ConfigParser()
-        config.read(CONFIG_FILE_NAME, encoding="utf8")
-        save_base_path = Path(config["save_base_path"]["save_base_path"])
-        layout = self._make_layout(config, save_base_path)
+        actual = window.link_search()
+        self.assertEqual(Result.success, actual)
 
-        ICON_PATH = "./image/icon.png"
-        icon_binary = Path(ICON_PATH).read_bytes()
+        window.checkbox_list[0].setChecked(not window.checkbox_list[0].isChecked())
 
-        mock_print = self.enterContext(patch("media_downloader.gui_main.print"))
-        mock_config = self.enterContext(patch("media_downloader.gui_main.configparser.ConfigParser"))
-        mock_logging = self.enterContext(patch("media_downloader.gui_main.logging"))
-        mock_logger = self.enterContext(patch("media_downloader.gui_main.getLogger"))
-        mock_window = self.enterContext(patch("media_downloader.gui_main.sg.Window"))
-        mock_link_searcher = self.enterContext(patch("media_downloader.gui_main.LinkSearcher.create"))
-        mock_subprocess = self.enterContext(patch("media_downloader.gui_main.subprocess"))
+        actual = window.link_search()
+        self.assertEqual(Result.success, actual)
 
-        mock_logging.config.fileConfig.side_effect = lambda f, disable_existing_loggers: True
-        mock_logging.root.manager.loggerDict = ["media_downloader", ""]
+        self.assertEqual(2, mock_create.call_count)
 
-        def pre_run(is_valid_config, is_valid_save_path, event):
-            mock_config.reset_mock()
-            mock_config.return_value.read.side_effect = lambda f, encoding: is_valid_config
+        mock_link_searcher1.fetch.assert_called_once_with(work_url)
+        mock_link_searcher2.fetch.assert_called_once_with(work_url)
 
-            def f(key):
-                if not is_valid_save_path and key == "save_base_path":
-                    raise ValueError
-                return config[key]
+        # 正常系: LinkSearcher 初期化時に設定を更新
+        window = self._create_window()
+        window.textbox1.setText(work_url)
 
-            mock_config.return_value.__getitem__.side_effect = f
+        window.checkbox_list[0].setChecked(True)
+        window.checkbox_list[1].setChecked(False)
+        window.checkbox_list[2].setChecked(True)
 
-            mock_window.reset_mock()
-            mock_window.return_value.read.side_effect = event
+        mock_create.reset_mock()
+        mock_create.side_effect = None
 
-            mock_link_searcher.reset_mock()
-            mock_subprocess.reset_mock()
-            pass
+        mock_link_searcher = MagicMock()
+        mock_create.return_value = mock_link_searcher
 
-        def post_run(is_valid_config, is_valid_save_path, event):
-            if not is_valid_config:
-                self.assertEqual(
-                    [
-                        call(),
-                        call().read(CONFIG_FILE_NAME, encoding="utf8"),
-                    ],
-                    mock_config.mock_calls,
-                )
-                mock_window.assert_not_called()
-                mock_link_searcher.assert_not_called()
-                mock_subprocess.assert_not_called()
-                return
+        actual = window.link_search()
 
-            event_keys = [ele[0] for ele in event]
-            expect_call_config = [
-                call(),
-                call().read(CONFIG_FILE_NAME, encoding="utf8"),
-                call().__getitem__("save_base_path"),
-                call().__getitem__("pixiv"),
-                call().__getitem__("nijie"),
-                call().__getitem__("nico_seiga"),
-            ]
+        self.assertEqual(Result.success, actual)
 
-            actual_layout = mock_window.mock_calls[0][1][1]
-            self._check_layout(layout, actual_layout)
-            expect_call_window = [call().focus(), call().focus_element("-WORK_URL-")]
-            expect_call_window.extend([call().read()] * len(event))
-            expect_call_window.append(call().close())
-            self.assertEqual(expect_call_window, mock_window.mock_calls[1:])
+        self.assertTrue(window.config["pixiv"]["is_enable"])
+        self.assertFalse(window.config["nijie"]["is_enable"])
+        self.assertTrue(window.config["nico_seiga"]["is_enable"])
+        self.assertEqual(
+            window.save_base_path,
+            window.config["save_base_path"],
+        )
 
-            if "-RUN-" in event_keys:
-                s_values = [ele[1] for ele in event if ele[0] == "-RUN-"][0]
-                if "-WORK_URL-" in s_values:
-                    work_url = s_values["-WORK_URL-"]
-                    expect_call_config.extend([
-                        call().__getitem__("pixiv"),
-                        call().__getitem__("nijie"),
-                        call().__getitem__("nico_seiga"),
-                    ])
-                    self.assertEqual(
-                        [
-                            call(mock_config.return_value),
-                            call().fetch(work_url),
-                        ],
-                        mock_link_searcher.mock_calls,
-                    )
-                else:
-                    mock_link_searcher.assert_not_called()
-            if "-FOLDER_OPEN-" in event_keys:
-                s_values = [ele[1] for ele in event if ele[0] == "-FOLDER_OPEN-"][0]
-                save_path = s_values["-SAVE_PATH-"]
-                self.assertEqual(
-                    [call.Popen(["explorer", save_path], shell=True)],
-                    mock_subprocess.mock_calls,
-                )
+    def test_directory_browse(self):
+        """directory_browse の正常系・異常系を確認する"""
 
-            self.assertEqual(expect_call_config, mock_config.mock_calls)
-            pass
+        mock_dialog = self.enterContext(patch("media_downloader.gui_main.QFileDialog"))
 
-        run_values = {
-            "-WORK_URL-": "work_url",
-            "-CB_pixiv-": True,
-            "-CB_nijie-": True,
-            "-CB_nico_seiga-": True,
-        }
-        error_run_values = {}
-        folder_values = {
-            "-SAVE_PATH-": "save_path",
-        }
-        Params = namedtuple("Params", ["is_valid_config", "is_valid_save_path", "event", "result"])
-        params_list = [
-            Params(True, True, [("-EXIT-", {})], Result.success),
-            Params(True, True, [("-RUN-", run_values), ("-EXIT-", {})], Result.success),
-            Params(True, True, [("-FOLDER_OPEN-", folder_values), ("-EXIT-", {})], Result.success),
-            Params(True, True, [("-RUN-", error_run_values), ("-EXIT-", {})], Result.success),
-            Params(True, False, [("-EXIT-", {})], Result.success),
-            Params(False, True, [("-EXIT-", {})], IOError),
+        # 異常系: レイアウト未初期化
+        window = GuiMain.__new__(GuiMain)
+
+        actual = window.directory_browse()
+
+        self.assertEqual(Result.failed, actual)
+        mock_dialog.assert_not_called()
+
+        # 正常系: フォルダ選択成功
+        window = self._create_window()
+
+        selected_path = str(Path(window.save_base_path).resolve())
+
+        mock_dialog.return_value.getExistingDirectory.return_value = selected_path
+
+        actual = window.directory_browse()
+
+        self.assertEqual(Result.success, actual)
+        self.assertEqual(
+            selected_path,
+            window.textbox3.text(),
+        )
+        self.assertEqual(
+            Path(selected_path),
+            window.save_base_path,
+        )
+        self.assertEqual(
+            Path(selected_path),
+            window.config["save_base_path"],
+        )
+
+        mock_dialog.return_value.getExistingDirectory.assert_called_once()
+
+        # 異常系: 存在しないディレクトリ
+        window = self._create_window()
+
+        invalid_path = Path(window.save_base_path) / "not_exist"
+
+        mock_dialog.reset_mock()
+        mock_dialog.return_value.getExistingDirectory.return_value = str(invalid_path)
+
+        actual = window.directory_browse()
+
+        self.assertEqual(Result.failed, actual)
+        mock_dialog.return_value.getExistingDirectory.assert_called_once()
+
+        # 異常系: キャンセル
+        window = self._create_window()
+
+        original_save_base_path = window.save_base_path
+        original_text = window.textbox3.text()
+
+        mock_dialog.reset_mock()
+        mock_dialog.return_value.getExistingDirectory.return_value = ""
+
+        actual = window.directory_browse()
+
+        self.assertEqual(Result.failed, actual)
+        self.assertEqual(
+            original_save_base_path,
+            window.save_base_path,
+        )
+        self.assertEqual(
+            original_text,
+            window.textbox3.text(),
+        )
+
+        mock_dialog.return_value.getExistingDirectory.assert_called_once()
+
+    def test_open_explorer(self):
+        """open_explorer の正常系・異常系を確認する"""
+
+        mock_popen = self.enterContext(patch("media_downloader.gui_main.subprocess.Popen"))
+
+        # 異常系: レイアウト未初期化
+        window = GuiMain.__new__(GuiMain)
+
+        actual = window.open_explorer()
+
+        self.assertEqual(Result.failed, actual)
+        mock_popen.assert_not_called()
+
+        # 正常系
+        window = self._create_window()
+
+        target_path = Path(window.textbox3.text())
+        self.assertTrue(target_path.exists())
+
+        actual = window.open_explorer()
+
+        self.assertEqual(Result.success, actual)
+        mock_popen.assert_called_once_with(["explorer", str(target_path)])
+
+        # 異常系: 存在しないパス
+        window = self._create_window()
+
+        invalid_path = Path(window.save_base_path) / "not_exist"
+        window.textbox3.setText(str(invalid_path))
+
+        mock_popen.reset_mock()
+
+        actual = window.open_explorer()
+
+        self.assertEqual(Result.failed, actual)
+        mock_popen.assert_not_called()
+
+    def test_create_layout(self):
+        """create_layout による GUI レイアウト生成を確認する"""
+
+        window = self._create_window()
+
+        # QDialog にレイアウトが設定されている
+        self.assertIsNotNone(window.layout())
+
+        # 作品ページ URL
+        self.assertIsInstance(
+            window.textbox1,
+            QLineEdit,
+        )
+
+        # 保存先パス
+        self.assertIsInstance(
+            window.textbox3,
+            QLineEdit,
+        )
+        self.assertEqual(
+            str(window.save_base_path),
+            window.textbox3.text(),
+        )
+
+        # チェックボックス
+        self.assertEqual(
+            3,
+            len(window.checkbox_list),
+        )
+
+        for checkbox in window.checkbox_list:
+            self.assertIsInstance(
+                checkbox,
+                QCheckBox,
+            )
+
+        self.assertEqual(
+            ["pixiv", "nijie", "nico_seiga"],
+            [checkbox.text() for checkbox in window.checkbox_list],
+        )
+
+        expected_checkbox_state = [
+            window.config["pixiv"]["is_enable"],
+            window.config["nijie"]["is_enable"],
+            window.config["nico_seiga"]["is_enable"],
         ]
-        for params in params_list:
-            pre_run(*params[:-1])
-            expect = params[-1]
-            if expect == Result.success:
-                actual = gui_main()
-                self.assertEqual(expect, actual)
-            else:
-                with self.assertRaises(expect):
-                    actual = gui_main()
-            post_run(*params[:-1])
+
+        actual_checkbox_state = [checkbox.isChecked() for checkbox in window.checkbox_list]
+
+        self.assertEqual(
+            expected_checkbox_state,
+            actual_checkbox_state,
+        )
+
+        # ログ表示用テキストエリア
+        self.assertIsInstance(
+            window.textarea,
+            QTextEdit,
+        )
+
+        # ボタン
+        buttons = window.findChildren(QPushButton)
+
+        self.assertEqual(
+            3,
+            len(buttons),
+        )
+
+        button_texts = {button.text() for button in buttons}
+
+        self.assertEqual(
+            {"実行", "参照", "開く"},
+            button_texts,
+        )
+
+        # チェックボックスの状態変更
+        checkbox = window.checkbox_list[0]
+
+        original = checkbox.isChecked()
+        checkbox.setChecked(not original)
+
+        self.assertNotEqual(
+            original,
+            checkbox.isChecked(),
+        )
+
+        # ウィンドウタイトル
+        self.assertIn(
+            "MediaDownloader",
+            window.windowTitle(),
+        )
 
 
 if __name__ == "__main__":
     if sys.argv:
         del sys.argv[1:]
+
     unittest.main(warnings="ignore")

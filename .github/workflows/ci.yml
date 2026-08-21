@@ -40,13 +40,13 @@ jobs:
 
     - name: Make config file
       run: |
-        python EncryptConfig.py --type="decrypt" --path="./encrypt_config_ci.ini" --key="${{ secrets.SECRET_KEY }}"
+        python EncryptConfig.py --type="decrypt" --path="./encrypt_config_ci.json" --key="${{ secrets.SECRET_KEY }}"
         dir
       working-directory: ./.github\workflows
 
     - name: Copy config file
       run: |
-        copy decrypt.ini ../../config/config.ini
+        copy decrypt.json ../../config/config.json
         cd ../../config/
         dir
       working-directory: ./.github\workflows

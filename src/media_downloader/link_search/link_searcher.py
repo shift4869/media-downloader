@@ -114,7 +114,12 @@ class LinkSearcher:
 if __name__ == "__main__":
     import logging.config
 
+    import orjson
+
     logging.config.fileConfig("./log/logging.ini", disable_existing_loggers=False)
+
+    CONFIG_FILE_NAME = "./config/config.json"
+    config = orjson.loads(Path(CONFIG_FILE_NAME).read_bytes())
 
     # url = "https://www.pixiv.net/artworks/86704541"
     # url = "https://www.pixiv.net/novel/show.php?id=17668373"
@@ -122,11 +127,6 @@ if __name__ == "__main__":
     url = f"https://seiga.nicovideo.jp/seiga/im5360137?query=1"
     # url = "https://skeb.jp/@matsukitchi12/works/25?query=1"
     # url = "https://www.anyurl/sample/index_{}.html"
-
-    CONFIG_FILE_NAME = "./config/config.ini"
-    config = configparser.ConfigParser()
-    if not config.read(CONFIG_FILE_NAME, encoding="utf8"):
-        raise IOError
 
     lsc = LinkSearcher.create(config)
     print(lsc.can_fetch(url))

@@ -31,7 +31,7 @@ PySimpleGUIを使用してGUIでの操作を前提とする。
 
 
 ## 使い方
-1. config_example.iniを確認して使用するアカウント情報を記載してconfig.iniにリネーム
+1. [config_example.json](./config/config.json)を確認して使用するアカウント情報を記載してconfig.jsonにリネーム
 1. python ./src/media_downloader/main.py
 1. GUIに従って作品URLを入力して実行
 
