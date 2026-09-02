@@ -23,7 +23,8 @@ class NicoSeigaURL:
     url: URL
 
     NICOSEIGA_URL_PATTERN_1 = r"^https://seiga.nicovideo.jp/seiga/(im)[0-9]+"
-    NICOSEIGA_URL_PATTERN_2 = r"^http://nico.ms/(im)[0-9]+"
+    NICOSEIGA_URL_PATTERN_2 = r"^https://seiga.nicovideo.jp/watch/(im)[0-9]+"
+    NICOSEIGA_URL_PATTERN_3 = r"^http://nico.ms/(im)[0-9]+"
 
     def __post_init__(self) -> None:
         """初期化処理
@@ -72,7 +73,8 @@ class NicoSeigaURL:
         """
         f1 = re.search(NicoSeigaURL.NICOSEIGA_URL_PATTERN_1, estimated_url) is not None
         f2 = re.search(NicoSeigaURL.NICOSEIGA_URL_PATTERN_2, estimated_url) is not None
-        return f1 or f2
+        f3 = re.search(NicoSeigaURL.NICOSEIGA_URL_PATTERN_3, estimated_url) is not None
+        return f1 or f2 or f3
 
     @classmethod
     def create(cls, url: str | URL) -> "NicoSeigaURL":
